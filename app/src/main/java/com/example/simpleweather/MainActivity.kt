@@ -5,7 +5,10 @@ import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.widget.LinearLayout
 import androidx.core.app.ActivityCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.simpleweather.databinding.ActivityMainBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
@@ -16,6 +19,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +42,7 @@ class MainActivity : AppCompatActivity() {
 
         val url4 = "api.openweathermap.org/data/2.5/forecast?lat=37.4856933&lon=127.1191588&appid=3bbea22f826e4eef49dc445bd1114a75"
         val url5 = "https://api.openweathermap.org/data/2.5/forecast?lat=37.4856933&lon=127.1191588&appid=3bbea22f826e4eef49dc445bd1114a75"
+        val url6 = "https://api.openweathermap.org/data/2.5/onecall?lat=37.4856933&lon=127.1191588&exclude=daily&appid=3bbea22f826e4eef49dc445bd1114a75"
 
     }
 
@@ -48,21 +53,27 @@ class MainActivity : AppCompatActivity() {
             .build()
         val retrofitService = retrofit.create(RetrofitService::class.java)
 
+
         retrofitService.getWeather(lat, lon).enqueue(object : Callback<Weather> {
             override fun onResponse(call: Call<Weather>, response: Response<Weather>) {
                 if(response.isSuccessful) {
                     val weather = response.body()
-                    val mainList = weather?.list
+                    val mainList = weather!!.list
 
                     Log.d("testt weather","${weather}")
                     Log.d("testt weatherList", "${weather?.city?.country}")
                     Log.d("testt mainList","${mainList}")
                     Log.d("testt size","${mainList?.size}")
 
-                    for(i in 0..39) {
-                        val mainList2 = mainList?.get(i)
-                        Log.d("testt ","${mainList2?.clouds?.all}")
-                    }
+                    val sunrise = weather.city.sunrise
+                    val sunset = weather.city.sunset
+                    val sunriseTime = Date(sunrise * 1000L)
+                    val sunsetTime = Date(sunset * 1000L)
+                    Log.d("testt sunriseTime", "${sunriseTime}")
+                    Log.d("testt sunsetTime", "${sunsetTime}")
+
+                    binding.recyclerView.adapter = WeatherAdapter(mainList, LayoutInflater.from(this@MainActivity))
+                    binding.recyclerView.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
 
                 }
             }
@@ -104,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                     LocationRequest.PRIORITY_HIGH_ACCURACY,
                     cancellationTokenSource!!.token
                 ).addOnSuccessListener { location ->
-                    binding.textView.text = "${location.latitude} / ${location.longitude}"
+                    //binding.textView.text = "${location.latitude} / ${location.longitude}"
                     lat = location.latitude.toString()
                     lon = location.longitude.toString()
                     Log.d("testt", "$lat / $lon")
